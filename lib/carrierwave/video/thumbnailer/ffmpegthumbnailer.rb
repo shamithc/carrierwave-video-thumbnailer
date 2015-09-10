@@ -41,20 +41,25 @@ module CarrierWave
 
         def run options
           logger = options.logger
-          cmd = %Q{#{CarrierWave::Video::Thumbnailer::FFMpegThumbnailer.binary} -i #{input_path.shellescape} -o #{output_path.shellescape} #{options.to_cli}}.rstrip
 
-            logger.info("Running....#{cmd}") if logger
-            outputs = []
-            exit_code = nil
+          cmd = if options.options[:extras] and options.options[:extras][:library] == "ffmeg"
+            %Q{ffmpeg -ss 1 -i #{input_path.shellescape} -vframes 1 -filter:v 'yadif' -aspect 1  #{output_path.shellescape}}.rstrip
+          else
+            %Q{#{CarrierWave::Video::Thumbnailer::FFMpegThumbnailer.binary} -i #{input_path.shellescape} -o #{output_path.shellescape} #{options.to_cli}}.rstrip
+          end
 
-            Open3.popen3(cmd) do |stdin, stdout, stderr, wait_thr|
-              stderr.each("r") do |line|
-                outputs << line
-              end
-              exit_code = wait_thr.value
+          logger.info("Running....#{cmd}") if logger
+          outputs = []
+          exit_code = nil
+
+          Open3.popen3(cmd) do |stdin, stdout, stderr, wait_thr|
+            stderr.each("r") do |line|
+              outputs << line
             end
+            exit_code = wait_thr.value
+          end
 
-            handle_exit_code(exit_code, outputs, logger)
+          handle_exit_code(exit_code, outputs, logger)
         end
 
         private

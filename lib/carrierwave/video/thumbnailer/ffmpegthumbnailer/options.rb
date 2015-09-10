@@ -28,6 +28,7 @@ module CarrierWave
         private
 
         def cli_key k
+          return if k == :extras
           '-' + (
                   case k
                   when :size        then 's'
